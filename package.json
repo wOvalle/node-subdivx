@@ -1,0 +1,32 @@
+{
+  "name": "node-subdivx",
+  "version": "1.0.0",
+  "description": "Subdivx scrapper using node.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wovalle/node-subdivx.git"
+  },
+  "keywords": [
+    "node",
+    "subdivx",
+    "spanish",
+    "subtitles"
+  ],
+  "author": "Willy Ovalle",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wovalle/node-subdivx/issues"
+  },
+  "homepage": "https://github.com/wovalle/node-subdivx#readme",
+  "devDependencies": {
+    "semistandard": "^8.0.0"
+  },
+  "dependencies": {
+    "cheerio": "^0.20.0",
+    "request": "^2.74.0"
+  }
+}
