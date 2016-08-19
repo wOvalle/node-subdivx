@@ -4,10 +4,15 @@ const $ = require('cheerio');
 const Promise = require('bluebird');
 const hat = require('hat');
 
-const SEARCH_SUBDIVX = 'http://subdivx.com/index.php?buscar={q}&accion=5&masdesc=&subtitulos=1&realiza_b=1';
-const SUBS_DIRECTORY = './.subs';
+function Subdivx () {
+  this.defaults = {
+    SEARCH_URL: 'http://subdivx.com/index.php?buscar={q}&accion=5&masdesc=&subtitulos=1&realiza_b=1',
+    DIRECTORY: './.subs'
+  };
+}
 
-exports.listSubs = function (opts, cb) {
+Subdivx.prototype.listSubs = function (opts, cb) {
+  var self = this;
   return new Promise(function (resolve, reject) {
     if (!opts) reject('getSubs parameter is required');
 
@@ -18,21 +23,20 @@ exports.listSubs = function (opts, cb) {
     }
 
     const requestOptions = {
-      url: SEARCH_SUBDIVX.replace('{q}', opts.query.replace(' ', '+'))
+      url: self.defaults.SEARCH_URL.replace('{q}', opts.query.replace(' ', '+'))
     };
 
-    exports._request
-            .call(this, requestOptions)
-            .then(exports._parseHTML)
-            .then(exports._downloadFiles.bind(this, opts))
+    self._request(requestOptions)
+            .then(self._parseHTML)
+            .then(self._downloadFiles.bind(self, opts))
             .then(resolve)
             .catch(reject);
   });
 };
 
-exports._request = function (opts) {
+Subdivx.prototype._request = function (opts) {
   return new Promise(function (resolve, reject) {
-    request(opts.url, function (err, res, body) {
+    request.get(opts.url, function (err, res, body) {
       if (err) reject('Error requesting subdivx');
 
       resolve(body);
@@ -40,7 +44,7 @@ exports._request = function (opts) {
   });
 };
 
-exports._parseHTML = function (html) {
+Subdivx.prototype._parseHTML = function (html) {
   return new Promise(function (resolve, reject) {
     const subs = $(html)
             .find('#contenedor_izq > div')
@@ -59,28 +63,32 @@ exports._parseHTML = function (html) {
   });
 };
 
-exports._downloadFiles = function (opts, subs) {
+Subdivx.prototype._downloadFiles = function (opts, subs) {
+  var self = this;
   return new Promise(function (resolve, reject) {
     if (!opts.download) resolve(subs);
-    if (!fs.existsSync(SUBS_DIRECTORY)) fs.mkdirSync(SUBS_DIRECTORY);
+    if (!fs.existsSync(self.defaults.DIRECTORY)) fs.mkdirSync(self.defaults.DIRECTORY);
 
     const promises = subs.map(function (sub) {
       return new Promise(function (resolve, reject) {
         const subId = /id=(.*)&/gi.exec(sub.downloadLink)[1] || hat();
         const r = request(sub.downloadLink);
+        let fileName = '';
 
         r.on('response', function (res) {
-          const fileName = `${SUBS_DIRECTORY}/${subId}.${res.headers['content-type'].split('/')[1]}`;
+          fileName = `${self.defaults.DIRECTORY}/${subId}.${res.headers['content-type'].split('/')[1]}`;
           const fileStream = fs.createWriteStream(fileName);
           res.pipe(fileStream);
+
+          res.on('end', function () {
+            sub.filePath = fileName;
+            resolve(sub);
+          });
+
         });
 
         r.on('error', function () {
           reject();
-        });
-
-        r.on('close', function () {
-          resolve();
         });
       });
     });
@@ -90,3 +98,5 @@ exports._downloadFiles = function (opts, subs) {
             .catch(reject);
   });
 };
+
+module.exports = new Subdivx();
