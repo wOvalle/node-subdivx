@@ -84,7 +84,6 @@ Subdivx.prototype._downloadFiles = function (opts, subs) {
             sub.filePath = fileName;
             resolve(sub);
           });
-
         });
 
         r.on('error', function () {
